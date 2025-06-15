@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "go build -o main ."
+
+[deploy]
+startCommand = "./main"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10 

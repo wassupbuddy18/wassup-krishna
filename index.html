@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Go WebSocket Chat</title>
+    <style>
+        body {
+            background: #f4f7fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 480px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 24px 24px 16px 24px;
+        }
+        h2 {
+            text-align: center;
+            color: #2d6cdf;
+            margin-bottom: 18px;
+        }
+        #chat {
+            border: 1px solid #e0e0e0;
+            background: #f9fbfd;
+            height: 320px;
+            overflow-y: auto;
+            padding: 12px;
+            margin-bottom: 18px;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        .msg {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .username {
+            color: #2d6cdf;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .self {
+            text-align: right;
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+        #username, #message {
+            padding: 8px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            font-size: 15px;
+        }
+        #username {
+            width: 30%;
+        }
+        #message {
+            width: 100%;
+            flex: 1;
+        }
+        #sendBtn {
+            background: #2d6cdf;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 18px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #sendBtn:hover {
+            background: #1a4fa0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Go WebSocket Chat</h2>
+        <div id="chat"></div>
+        <div class="input-row">
+            <input id="username" type="text" placeholder="Username" autocomplete="off" />
+            <input id="message" type="text" placeholder="Type a message..." autocomplete="off" onkeydown="if(event.key==='Enter'){sendMessage();}" />
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <script>
+        // Get the current host and protocol
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        let ws = new WebSocket(`${protocol}//${host}/ws`);
+        let chat = document.getElementById('chat');
+        let usernameInput = document.getElementById('username');
+        let messageInput = document.getElementById('message');
+
+        ws.onmessage = function(event) {
+            let msg = JSON.parse(event.data);
+            let el = document.createElement('div');
+            el.className = 'msg' + (msg.username === usernameInput.value ? ' self' : '');
+            el.innerHTML = `<span class="username">${escapeHtml(msg.username)}</span>${escapeHtml(msg.message)}`;
+            chat.appendChild(el);
+            chat.scrollTop = chat.scrollHeight;
+        };
+
+        function sendMessage() {
+            let username = usernameInput.value.trim() || "Anonymous";
+            let message = messageInput.value.trim();
+            if (message === "") return;
+            ws.send(JSON.stringify({username: username, message: message}));
+            messageInput.value = "";
+            messageInput.focus();
+        }
+
+        // Prevent XSS
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function(m) {
+                return ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                })[m];
+            });
+        }
+    </script>
+</body>
+</html>
