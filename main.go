@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -24,12 +24,17 @@ type Message struct {
 }
 
 func main() {
+	// Set up logging
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Println("Starting server...")
+
 	// Serve static files
 	fs := http.FileServer(http.Dir("."))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Serve index.html at root
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Received request for path: %s", r.URL.Path)
 		if r.URL.Path == "/" {
 			http.ServeFile(w, r, "index.html")
 		} else {
@@ -39,7 +44,7 @@ func main() {
 
 	// WebSocket endpoint
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		// Add CORS headers
+		log.Printf("Received WebSocket request from: %s", r.RemoteAddr)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -59,28 +64,29 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Printf("Server started on :%s\n", port)
+	log.Printf("Server starting on port %s", port)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
-		panic("Error starting server: " + err.Error())
+		log.Fatalf("Error starting server: %v", err)
 	}
 }
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("Error upgrading connection: %v", err)
 		return
 	}
 	defer conn.Close()
 
 	clients[conn] = true
+	log.Printf("New client connected. Total clients: %d", len(clients))
 
 	for {
 		var msg Message
 		err := conn.ReadJSON(&msg)
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("Error reading message: %v", err)
 			delete(clients, conn)
 			return
 		}
@@ -92,11 +98,12 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleMessages() {
 	for {
 		msg := <-broadcast
+		log.Printf("Broadcasting message from %s", msg.Username)
 
 		for client := range clients {
 			err := client.WriteJSON(msg)
 			if err != nil {
-				fmt.Println(err)
+				log.Printf("Error writing message: %v", err)
 				client.Close()
 				delete(clients, client)
 			}
