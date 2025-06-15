@@ -91,10 +91,25 @@
         // Get the current host and protocol
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
-        let ws = new WebSocket(`${protocol}//${host}/ws`);
+        const wsUrl = `${protocol}//${host}/ws`;
+        console.log('Connecting to WebSocket at:', wsUrl);
+        
+        let ws = new WebSocket(wsUrl);
         let chat = document.getElementById('chat');
         let usernameInput = document.getElementById('username');
         let messageInput = document.getElementById('message');
+
+        ws.onopen = function() {
+            console.log('WebSocket connection established');
+        };
+
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+        ws.onclose = function() {
+            console.log('WebSocket connection closed');
+        };
 
         ws.onmessage = function(event) {
             let msg = JSON.parse(event.data);

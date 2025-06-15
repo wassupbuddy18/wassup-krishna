@@ -10,6 +10,7 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
+		// Allow all origins for now, but you should restrict this in production
 		return true
 	},
 }
@@ -23,11 +24,33 @@ type Message struct {
 }
 
 func main() {
-	http.HandleFunc("/ws", handleConnections)
-
-	// Serve index.html and other static files from the current directory
+	// Serve static files
 	fs := http.FileServer(http.Dir("."))
-	http.Handle("/", fs)
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Serve index.html at root
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "index.html")
+		} else {
+			fs.ServeHTTP(w, r)
+		}
+	})
+
+	// WebSocket endpoint
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		// Add CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		handleConnections(w, r)
+	})
 
 	go handleMessages()
 
