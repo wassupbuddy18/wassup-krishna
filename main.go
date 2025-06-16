@@ -42,6 +42,11 @@ func main() {
 		}
 	})
 
+	// Serve About page
+	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "about.html")
+	})
+
 	// WebSocket endpoint
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received WebSocket request from: %s", r.RemoteAddr)

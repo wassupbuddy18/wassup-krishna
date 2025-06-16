@@ -17,6 +17,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.08);
             padding: 24px 24px 16px 24px;
+            position: relative;
         }
         h2 {
             text-align: center;
@@ -75,10 +76,20 @@
         #sendBtn:hover {
             background: #1a4fa0;
         }
+        a.about-link {
+            position: absolute;
+            top: 18px;
+            right: 24px;
+            color: #2d6cdf;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="/about" class="about-link">About</a>
         <h2>Go WebSocket Chat</h2>
         <div id="chat"></div>
         <div class="input-row">
